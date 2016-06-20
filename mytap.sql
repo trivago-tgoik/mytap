@@ -529,7 +529,7 @@ BEGIN
       FROM information_schema.tables
      WHERE table_name = tname
        AND table_schema = dbname
-       AND table_type <> 'SYSTEM VIEW';
+       AND column_type <> 'SYSTEM VIEW';
     RETURN COALESCE(ret, 0);
 END //
 
@@ -541,6 +541,30 @@ BEGIN
         concat('Table ', quote_ident(dbname), '.', quote_ident(tname), ' should exist')
     );
 END //
+
+
+DROP FUNCTION IF EXISTS _has_column_type //
+CREATE FUNCTION _has_column_type(dbname TEXT, tname TEXT, cname TEXT, ctype TEXT) RETURNS BOOLEAN
+    BEGIN
+        DECLARE ret BOOLEAN;
+        SELECT 1
+        INTO ret
+        FROM information_schema.columns
+        WHERE table_name = tname
+              AND table_schema = dbname
+              AND column_name = cname
+              AND column_type = ctype;
+        RETURN COALESCE(ret, 0);
+    END //
+
+DROP FUNCTION IF EXISTS has_column_type //
+CREATE FUNCTION has_column_type(dbname TEXT, tname TEXT, cname TEXT, ctype TEXT) RETURNS TEXT
+    BEGIN
+        RETURN ok(
+            _has_column_type(dbname, tname, cname, ctype),
+            concat('Column  ', quote_ident(dbname), '.', quote_ident(tname), '.', quote_ident(cname), ' should have correct type')
+        );
+    END //
 
 DROP FUNCTION IF EXISTS hasnt_table //
 CREATE FUNCTION hasnt_table(dbname TEXT, tname TEXT) RETURNS TEXT
